@@ -24,8 +24,8 @@ heartFull = pygame.transform.scale(pygame.image.load('assets/ui_heart_full.png')
 heartHalf = pygame.transform.scale(pygame.image.load('assets/ui_heart_half.png'), (heartWidth, heartHeight))
 heartEmpty = pygame.transform.scale(pygame.image.load('assets/ui_heart_empty.png'), (heartWidth, heartHeight))
 
-lizard = Lizard(speed=3, screen_width=width, screen_height=height)
-orc = Orc(speed=0.8, screen_width=width, screen_height=height)
+lizard = Lizard(speed=0.4, screen_width=width, screen_height=height)
+orc = Orc(speed=0.4, screen_width=width, screen_height=height)
 
 player = Player(330, 300, 40, 75)
 def drawHealth(screen, health):
@@ -53,6 +53,7 @@ while running:
             if event.key == pygame.K_l:
                 player.stop_attack()
 
+
     keys = pygame.key.get_pressed()
     player.move(keys)
     player.updateArrows(screen)
@@ -61,6 +62,9 @@ while running:
     screen.blit(center_image, center_rect)
     player.draw(screen)
     drawHealth(screen, player.health)
+
+    lizard.move_towards_player(player.rect.x, player.rect.y)
+    orc.move_towards_player(player.rect.x, player.rect.y)
 
     lizard.update()
     orc.update()
