@@ -2,7 +2,7 @@ import pygame
 from arrow import *
 
 class Player:
-    def __init__(self, x, y, width=50, height=50):
+    def __init__(self, x, y, width=50, height=50, health=3):
         self.__original_image = pygame.image.load('assets/elf_f_run_anim_f0.png')
         self.__image = pygame.transform.scale(self.__original_image, (width, height))
         self.__rect = self.__image.get_rect()
@@ -19,6 +19,7 @@ class Player:
         self.__weapon_rect = self.__weaponImage.get_rect()
         self.__attacking = False
         self.__arrows = []
+        self.__health = health
 
     @property
     def rect(self):
@@ -47,6 +48,10 @@ class Player:
     @property
     def arrows(self):
         return self.__arrows
+
+    @property
+    def health(self):
+        return self.__health
 
     # Setters
     @rect.setter
@@ -78,6 +83,10 @@ class Player:
     @arrows.setter
     def arrows(self, value):
         self.__arrows = value
+
+    @health.setter
+    def health(self, value):
+        self.__health = value
 
     def move(self, key):
 
