@@ -146,3 +146,6 @@ class Player:
         self.__currentWeapon = "bow" if self.__currentWeapon == 'hammer' else 'hammer'
         self.__weaponImage = self.__weapons[self.__currentWeapon]
         self.__weapon_rect = self.__weaponImage.get_rect()
+
+
+
