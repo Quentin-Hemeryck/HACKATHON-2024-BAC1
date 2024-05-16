@@ -23,6 +23,6 @@ Auteurs:
     - Decamps Max
 
 Contact:
-    - hemeryck.quentin@std.heh.be
-    - decamps.max@std.heh.be
+    - quentin.hemeryck@std.heh.be
+    - max.decamps@std.heh.be
 
