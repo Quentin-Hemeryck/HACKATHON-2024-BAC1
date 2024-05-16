@@ -2,6 +2,9 @@ import pygame
 from arrow import *
 
 class Player:
+    """
+    Classe représentant le joueur.
+    """
     def __init__(self, x, y, width=50, height=50, health=30):
         self.__images = {
             'right': pygame.image.load("assets/elf_f_run_anim_f0.png"),
@@ -14,7 +17,7 @@ class Player:
         self.__rect = self.__current_image.get_rect()
         self.__rect.x = x
         self.__rect.y = y
-        self.__speed = 2.3
+        self.__speed = 1.7
         self.__attack_frame = 0
         self.__weapons = {
             'hammer': {
@@ -166,6 +169,9 @@ class Player:
         self.__invincible_start_time = value
 
     def move(self, keys):
+        """
+        Déplace le joueur en fonction des touches pressées.
+        """
         def check_oob(x, y):
             limit_x = [18, 629]
             limit_y = [2, 557]
@@ -200,19 +206,35 @@ class Player:
             if self.__current_weapon == 'bow' or self.__current_weapon == 'hammer':
                 self.__weapon_image = self.__weapons[self.__current_weapon][self.__current_direction]
                 self.__weapon_rect = self.__weapon_image.get_rect()
+
     def draw(self, screen):
+        """
+        Dessine le joueur à l'écran.
+        """
         screen.blit(self.__current_image, self.__rect.topleft)
         if self.__attacking:
             attack_position = (self.__rect.right - 10, self.__rect.top + 10 + self.__rect.height // 2 - self.__weapon_rect.height // 2)
             screen.blit(self.__weapon_image, attack_position)
+
     def attack(self):
+        """
+        Déclenche l'attaque du joueur.
+        """
         self.__attacking = True
+
     def updateArrows(self, screen):
+        """
+        Met à jour et dessine les flèches du joueur.
+        """
         for arrow in self.__arrows[:]:
             arrow.draw(screen)
             if not arrow.update():
                 self.__arrows.remove(arrow)
+
     def shootArrow(self):
+        """
+        Tire une flèche dans la direction actuelle du joueur.
+        """
         if self.__current_weapon == "bow":
             direction = self.__current_direction
             arrow_image_paths = {
@@ -231,32 +253,52 @@ class Player:
                 new_arrow = Arrow(self.__rect.centerx, self.__rect.bottom, direction, arrow_image_paths[direction])
             self.__arrows.append(new_arrow)
             print(f"arrow shot from position: ({new_arrow.rect.x}, {new_arrow.rect.y})")
+
     def swingHammer(self, enemies):
+        """
+        Frappe avec le marteau et vérifie les collisions avec les ennemis.
+        """
         if self.__current_weapon == "hammer":
             self.__weapon_image = self.__weapons['hammer_attack'][self.__current_direction]
             self.__weapon_rect = self.__weapon_image.get_rect(center=self.__rect.center)
-            hammer_damage = 20
+            hammer_damage = 25
             for enemy in enemies:
                 if self.__weapon_rect.colliderect(enemy.rect):
                     enemy.applyDamage(hammer_damage)
                     print(f"Hit enemy with hammer at position: ({enemy.rect.x}, {enemy.rect.y})")
             self.__weapon_image = self.__weapons[self.__current_weapon][self.__current_direction]
+
     def stop_attack(self):
+        """
+        Arrête l'attaque du joueur.
+        """
         self.__attacking = False
+
     def switchWeapon(self):
+        """
+        Change l'arme actuelle du joueur.
+        """
         if self.__current_weapon == 'hammer':
             self.__current_weapon = 'bow'
         else:
             self.__current_weapon = 'hammer'
         self.__weapon_image = self.__weapons[self.__current_weapon][self.__current_direction]
         self.__weapon_rect = self.__weapon_image.get_rect()
+
     def take_damage(self, damage):
+        """
+        Inflige des dégâts au joueur.
+        """
         if not self.__invincible:
             self.__health -= damage
             self.__invincible = True
             self.__invincible_start_time = pygame.time.get_ticks()
             print(f"Player health: {self.__health}")
+
     def update_invincibility(self):
+        """
+        Met à jour l'état d'invincibilité du joueur.
+        """
         if self.__invincible:
             current_time = pygame.time.get_ticks()
             if current_time - self.__invincible_start_time >= 1000:

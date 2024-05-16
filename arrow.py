@@ -1,6 +1,9 @@
 import pygame
 
 class Arrow:
+    """
+    Classe représentant une flèche tirée par le joueur.
+    """
     def __init__(self, x, y, direction, image_path, speed=1.9):
         self.__original_image = pygame.image.load(image_path)
         self.__new_width = int(self.__original_image.get_width() * 1)
@@ -18,11 +21,15 @@ class Arrow:
     @property
     def rect(self):
         return self.__rect
+
     @rect.setter
     def rect(self, value):
         self.__rect = value
 
     def update(self):
+        """
+        Met à jour la position de la flèche.
+        """
         if self.__direction == 'right':
             self.__rect.x += self.__speed
         elif self.__direction == 'left':
@@ -38,5 +45,9 @@ class Arrow:
         if self.__distance >= self.__max_distance:
             return False
         return True
+
     def draw(self, screen):
+        """
+        Dessine la flèche à l'écran.
+        """
         screen.blit(self.__image, self.__rect)

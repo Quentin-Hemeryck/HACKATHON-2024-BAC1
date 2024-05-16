@@ -6,6 +6,7 @@ from enemy import *
 import json
 
 pygame.init()
+pygame.mixer.init()
 width, height = 679, 676
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Underworld's Call")
@@ -41,7 +42,19 @@ enemies = [lizard, orc]
 
 player = Player(330, 300, 40, 75)
 
+pygame.mixer.music.load('sounds/GameIsOn.wav')
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
+
+game_over_sound = pygame.mixer.Sound('sounds/gameOver.wav')
+teleport_sound = pygame.mixer.Sound('sounds/Teleport.wav')
+power_up_sound = pygame.mixer.Sound('sounds/powerUp.wav')
+
+
 def drawHealth(screen, health):
+    """
+    Dessine les cœurs représentant la santé du joueur à l'écran.
+    """
     heart_x_start = 10
     heart_y = 10
     hearts_full = health // 10
@@ -55,7 +68,12 @@ def drawHealth(screen, health):
 
     for i in range(hearts_full + hearts_half, 3):
         screen.blit(heartEmpty, (heart_x_start + 32 * i, heart_y))
+
+
 def checkCollide(arrows, enemies):
+    """
+    Vérifie les collisions entre les flèches et les ennemis.
+    """
     arrows_to_remove = []
     enemies_to_remove = []
 
@@ -72,24 +90,54 @@ def checkCollide(arrows, enemies):
 
     for arrow in arrows_to_remove:
         arrows.remove(arrow)
+
+
 def checkHammerCollide(player, enemies):
+    """
+    Vérifie les collisions entre le marteau du joueur et les ennemis.
+    """
     if player.attacking and player.current_weapon == 'hammer':
         player.swingHammer(enemies)
+
+
 def check_player_enemy_collisions(player, enemies):
+    """
+    Vérifie les collisions entre le joueur et les ennemis.
+    """
     for enemy in enemies:
         if player.rect.colliderect(enemy.rect):
             player.take_damage(5)
+
+
 def all_enemies_defeated(enemies):
+    """
+    Vérifie si tous les ennemis ont été vaincus.
+    """
     return all(not enemy.isAlive() for enemy in enemies)
+
+
 def load_next_wave(enemies, wave):
+    """
+    Charge la prochaine vague d'ennemis.
+    """
     new_enemies = create_enemies(len(enemies) * 2, 0.4, width, height, Lizard) + create_enemies(len(enemies) * 2, 0.4,
                                                                                                 width, height, Orc)
     if wave == 2:
         new_enemies.append(Boss(speed=0.3, screen_width=width, screen_height=height))
     return new_enemies
+
+
 def create_enemies(count, speed, width, height, enemy_type=Lizard):
+    """
+    Crée une liste d'ennemis.
+    """
     return [enemy_type(speed=speed, screen_width=width, screen_height=height) for _ in range(count)]
+
+
 def render_text_with_outline(font, text, text_color, outline_color):
+    """
+    Rendu d'un texte avec un contour.
+    """
     base = font.render(text, True, text_color)
     width = base.get_width() + 2
     height = base.get_height() + 2
@@ -102,7 +150,12 @@ def render_text_with_outline(font, text, text_color, outline_color):
     img.blit(base, (1, 1))
 
     return img
+
+
 def main_menu():
+    """
+    Affiche le menu principal et gère la sélection des options.
+    """
     menu = True
     selected = "start"
     background_menu_image = pygame.image.load('assets/backgroundMenu.png')
@@ -151,13 +204,24 @@ def main_menu():
                         selected = "exit"
                 elif event.key == pygame.K_RETURN:
                     if selected == "start":
+                        pygame.mixer.music.load('sounds/DemonsSouls.wav')
+                        pygame.mixer.music.play(-1)
                         menu = False
                     elif selected == "time_trial":
+                        pygame.mixer.music.load('sounds/DemonsSouls.wav')
+                        pygame.mixer.music.play(-1)
                         menu = False
                     elif selected == "exit":
                         pygame.quit()
                         sys.exit()
+
+
 def game_over_screen():
+    """
+    Affiche l'écran de game over.
+    """
+    pygame.mixer.music.stop()
+    game_over_sound.play()
     font = pygame.font.Font("fonts/font.ttf", 64)
     text_color = (255, 0, 0)
     outline_color = (0, 0, 0)
@@ -165,7 +229,12 @@ def game_over_screen():
     game_over_rect = game_over_text.get_rect(center=(width // 2, height // 2))
     screen.blit(game_over_text, game_over_rect)
     pygame.display.update()
+
+
 def save_game(player, enemies, wave):
+    """
+    Sauvegarde l'état actuel du jeu dans un fichier JSON.
+    """
     game_state = {
         'player': {
             'x': player.rect.x,
@@ -183,12 +252,21 @@ def save_game(player, enemies, wave):
     }
     with open('save/savegame.json', 'w') as save_file:
         json.dump(game_state, save_file)
+
+
 def pause_menu():
+    """
+    Affiche le menu de pause et gère la sélection des options.
+    """
     paused = True
+    selected = "resume"
     background_menu_image = pygame.image.load('assets/backgroundMenu.png')
     font = pygame.font.Font("fonts/font.ttf", 30)
     text_color = (255, 255, 0)
     outline_color = (255, 255, 255)
+
+    pygame.mixer.music.load('sounds/GameIsOn.wav')
+    pygame.mixer.music.play(-1)
 
     while paused:
         screen.blit(background_menu_image, (0, 0))
@@ -203,6 +281,15 @@ def pause_menu():
         upgrade_rect = upgrade_text.get_rect(center=(width // 2, height // 2 + 60))
         quit_rect = quit_text.get_rect(center=(width // 2, height // 2 + 120))
 
+        if selected == "resume":
+            pygame.draw.rect(screen, (255, 0, 0), resume_rect.inflate(20, 10), 3)
+        if selected == "save":
+            pygame.draw.rect(screen, (255, 0, 0), save_rect.inflate(20, 10), 3)
+        if selected == "upgrade":
+            pygame.draw.rect(screen, (255, 0, 0), upgrade_rect.inflate(20, 10), 3)
+        if selected == "quit":
+            pygame.draw.rect(screen, (255, 0, 0), quit_rect.inflate(20, 10), 3)
+
         screen.blit(resume_text, resume_rect)
         screen.blit(save_text, save_rect)
         screen.blit(upgrade_text, upgrade_rect)
@@ -215,23 +302,34 @@ def pause_menu():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    paused = False
-                if event.key == pygame.K_RETURN:
-                    if resume_rect.collidepoint(pygame.mouse.get_pos()):
+                if event.key == pygame.K_UP:
+                    if selected == "save":
+                        selected = "resume"
+                    elif selected == "upgrade":
+                        selected = "save"
+                    elif selected == "quit":
+                        selected = "upgrade"
+                elif event.key == pygame.K_DOWN:
+                    if selected == "resume":
+                        selected = "save"
+                    elif selected == "save":
+                        selected = "upgrade"
+                    elif selected == "upgrade":
+                        selected = "quit"
+                elif event.key == pygame.K_RETURN:
+                    if selected == "resume":
                         paused = False
-                    elif quit_rect.collidepoint(pygame.mouse.get_pos()):
+                        pygame.mixer.music.load('sounds/DemonsSouls.wav')
+                        pygame.mixer.music.play(-1)
+                    elif selected == "save":
+                        save_game(player, enemies, wave)
+                    elif selected == "upgrade":
+                        paused = False
+                        player.speed += 0.5
+                        power_up_sound.play()
+                    elif selected == "quit":
                         main_menu()
 
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if resume_rect.collidepoint(event.pos):
-                    paused = False
-                elif save_rect.collidepoint(event.pos):
-                    save_game(player, enemies, wave)
-                elif upgrade_rect.collidepoint(event.pos):
-                    print("Upgrade button clicked")
-                elif quit_rect.collidepoint(event.pos):
-                    main_menu()
 
 running = True
 game_over = False
@@ -264,6 +362,7 @@ while running:
     player.move(keys)
 
     if all_enemies_defeated(enemies) and player.rect.colliderect(next_room_tp):
+        teleport_sound.play()
         if wave < 2:
             wave += 1
             enemies = load_next_wave(enemies, wave)

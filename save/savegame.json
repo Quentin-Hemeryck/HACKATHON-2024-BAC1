@@ -1,1 +1,1 @@
-{"player": {"x": 172, "y": 462, "health": 30, "current_weapon": "hammer"}, "enemies": [{"type": "Lizard", "x": 307, "y": 361, "health": 10}, {"type": "Orc", "x": 310, "y": 274, "health": 10}], "wave": 1}
+{"player": {"x": 422, "y": 300, "health": 30, "current_weapon": "hammer"}, "enemies": [{"type": "Lizard", "x": 132, "y": 90, "health": 10}, {"type": "Orc", "x": 312, "y": 383, "health": 10}], "wave": 1}
