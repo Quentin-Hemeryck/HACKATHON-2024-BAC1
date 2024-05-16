@@ -3,19 +3,21 @@ import sys
 from player import *
 from arrow import *
 from enemy import *
+import json
 
 pygame.init()
 width, height = 679, 676
 screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("HadèsLike")
+pygame.display.set_caption("Underworld's Call")
+pygame.display.set_icon(pygame.image.load('assets/logo.png'))
 
 background_image = pygame.image.load('assets/map.png')
 center_image = pygame.image.load('assets/floor_3.png')
 center_rect = center_image.get_rect()
 center_rect.center = (width // 2, height // 2)
 
-new_width = int(center_image.get_width()*2.5)
-new_height = int(center_image.get_height()*2.5)
+new_width = int(center_image.get_width() * 2.5)
+new_height = int(center_image.get_height() * 2.5)
 center_image = pygame.transform.scale(center_image, (new_width, new_height))
 
 heartWidth = 32
@@ -31,12 +33,14 @@ next_room_tp = pygame.Rect(tp_x, tp_y, tp_width, tp_height)
 
 lizard = Lizard(speed=0.25, screen_width=width, screen_height=height)
 orc = Orc(speed=0.25, screen_width=width, screen_height=height)
+boss = Boss(speed=0.3, screen_width=width, screen_height=height)
 
 last_damage_time = 0
 
 enemies = [lizard, orc]
 
 player = Player(330, 300, 40, 75)
+
 def drawHealth(screen, health):
     heart_x_start = 10
     heart_y = 10
@@ -51,7 +55,6 @@ def drawHealth(screen, health):
 
     for i in range(hearts_full + hearts_half, 3):
         screen.blit(heartEmpty, (heart_x_start + 32 * i, heart_y))
-
 def checkCollide(arrows, enemies):
     arrows_to_remove = []
     enemies_to_remove = []
@@ -69,35 +72,188 @@ def checkCollide(arrows, enemies):
 
     for arrow in arrows_to_remove:
         arrows.remove(arrow)
-
-def all_ennemy_defeated(enemies):
+def checkHammerCollide(player, enemies):
+    if player.attacking and player.current_weapon == 'hammer':
+        player.swingHammer(enemies)
+def check_player_enemy_collisions(player, enemies):
+    for enemy in enemies:
+        if player.rect.colliderect(enemy.rect):
+            player.take_damage(5)
+def all_enemies_defeated(enemies):
     return all(not enemy.isAlive() for enemy in enemies)
-
-def load_next_room():
-    global enemies
-    double_count = len(enemies) * 2
-    enemies = create_enemies(double_count // 2, 0.4, width, height, Lizard) + create_enemies(double_count // 2, 0.4, width, height, Orc)
-    print(f"Loaded {double_count} enemies in the next room.")
-
+def load_next_wave(enemies, wave):
+    new_enemies = create_enemies(len(enemies) * 2, 0.4, width, height, Lizard) + create_enemies(len(enemies) * 2, 0.4,
+                                                                                                width, height, Orc)
+    if wave == 2:
+        new_enemies.append(Boss(speed=0.3, screen_width=width, screen_height=height))
+    return new_enemies
 def create_enemies(count, speed, width, height, enemy_type=Lizard):
     return [enemy_type(speed=speed, screen_width=width, screen_height=height) for _ in range(count)]
+def render_text_with_outline(font, text, text_color, outline_color):
+    base = font.render(text, True, text_color)
+    width = base.get_width() + 2
+    height = base.get_height() + 2
+
+    img = pygame.Surface((width, height), pygame.SRCALPHA)
+
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1), (-1, 1), (1, -1)]:
+        img.blit(font.render(text, True, outline_color), (dx + 1, dy + 1))
+
+    img.blit(base, (1, 1))
+
+    return img
+def main_menu():
+    menu = True
+    selected = "start"
+    background_menu_image = pygame.image.load('assets/backgroundMenu.png')
+    font = pygame.font.Font("fonts/font.ttf", 30)
+    text_color = (255, 255, 0)
+    outline_color = (255, 255, 255)
+
+    while menu:
+        screen.blit(background_menu_image, (0, 0))
+
+        normal_mode = render_text_with_outline(font, "Normal Mode", text_color, outline_color)
+        time_trial_mode = render_text_with_outline(font, "Time Trial Mode", text_color, outline_color)
+        exit_game = render_text_with_outline(font, "Exit", text_color, outline_color)
+
+        normal_mode_rect = normal_mode.get_rect(center=(width // 2, height // 2))
+        time_trial_mode_rect = time_trial_mode.get_rect(center=(width // 2, height // 2 + 60))
+        exit_game_rect = exit_game.get_rect(center=(width // 2, height // 2 + 120))
+
+        if selected == "start":
+            pygame.draw.rect(screen, (255, 0, 0), normal_mode_rect.inflate(20, 10), 3)
+        if selected == "time_trial":
+            pygame.draw.rect(screen, (255, 0, 0), time_trial_mode_rect.inflate(20, 10), 3)
+        if selected == "exit":
+            pygame.draw.rect(screen, (255, 0, 0), exit_game_rect.inflate(20, 10), 3)
+
+        screen.blit(normal_mode, normal_mode_rect)
+        screen.blit(time_trial_mode, time_trial_mode_rect)
+        screen.blit(exit_game, exit_game_rect)
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    if selected == "time_trial":
+                        selected = "start"
+                    elif selected == "exit":
+                        selected = "time_trial"
+                elif event.key == pygame.K_DOWN:
+                    if selected == "start":
+                        selected = "time_trial"
+                    elif selected == "time_trial":
+                        selected = "exit"
+                elif event.key == pygame.K_RETURN:
+                    if selected == "start":
+                        menu = False
+                    elif selected == "time_trial":
+                        menu = False
+                    elif selected == "exit":
+                        pygame.quit()
+                        sys.exit()
+def game_over_screen():
+    font = pygame.font.Font("fonts/font.ttf", 64)
+    text_color = (255, 0, 0)
+    outline_color = (0, 0, 0)
+    game_over_text = render_text_with_outline(font, "Game Over", text_color, outline_color)
+    game_over_rect = game_over_text.get_rect(center=(width // 2, height // 2))
+    screen.blit(game_over_text, game_over_rect)
+    pygame.display.update()
+def save_game(player, enemies, wave):
+    game_state = {
+        'player': {
+            'x': player.rect.x,
+            'y': player.rect.y,
+            'health': player.health,
+            'current_weapon': player.current_weapon
+        },
+        'enemies': [{
+            'type': type(enemy).__name__,
+            'x': enemy.rect.x,
+            'y': enemy.rect.y,
+            'health': enemy.mobHealth
+        } for enemy in enemies],
+        'wave': wave
+    }
+    with open('save/savegame.json', 'w') as save_file:
+        json.dump(game_state, save_file)
+def pause_menu():
+    paused = True
+    background_menu_image = pygame.image.load('assets/backgroundMenu.png')
+    font = pygame.font.Font("fonts/font.ttf", 30)
+    text_color = (255, 255, 0)
+    outline_color = (255, 255, 255)
+
+    while paused:
+        screen.blit(background_menu_image, (0, 0))
+
+        resume_text = render_text_with_outline(font, "Resume", text_color, outline_color)
+        save_text = render_text_with_outline(font, "Save Game", text_color, outline_color)
+        upgrade_text = render_text_with_outline(font, "Upgrade", text_color, outline_color)
+        quit_text = render_text_with_outline(font, "Quit", text_color, outline_color)
+
+        resume_rect = resume_text.get_rect(center=(width // 2, height // 2 - 60))
+        save_rect = save_text.get_rect(center=(width // 2, height // 2))
+        upgrade_rect = upgrade_text.get_rect(center=(width // 2, height // 2 + 60))
+        quit_rect = quit_text.get_rect(center=(width // 2, height // 2 + 120))
+
+        screen.blit(resume_text, resume_rect)
+        screen.blit(save_text, save_rect)
+        screen.blit(upgrade_text, upgrade_rect)
+        screen.blit(quit_text, quit_rect)
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    paused = False
+                if event.key == pygame.K_RETURN:
+                    if resume_rect.collidepoint(pygame.mouse.get_pos()):
+                        paused = False
+                    elif quit_rect.collidepoint(pygame.mouse.get_pos()):
+                        main_menu()
+
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if resume_rect.collidepoint(event.pos):
+                    paused = False
+                elif save_rect.collidepoint(event.pos):
+                    save_game(player, enemies, wave)
+                elif upgrade_rect.collidepoint(event.pos):
+                    print("Upgrade button clicked")
+                elif quit_rect.collidepoint(event.pos):
+                    main_menu()
 
 running = True
 game_over = False
+wave = 1
 
+main_menu()
+
+""" Boucle de jeu """
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        if player.rect.colliderect(next_room_tp) and all_ennemy_defeated(enemies):
-            load_next_room()
-        if all_ennemy_defeated(enemies):
-            print("La plaque de téléportation est maintenant utilisable!")
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_l:
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                pause_menu()
+            elif event.key == pygame.K_l:
                 player.attack()
-            elif event.key == pygame.K_m:
-                player.shootArrow()
+            elif event.key == pygame.K_m and player.attacking:
+                if player.current_weapon == 'bow':
+                    player.shootArrow()
+                elif player.current_weapon == 'hammer':
+                    player.swingHammer(enemies)
             elif event.key == pygame.K_1:
                 player.switchWeapon()
         elif event.type == pygame.KEYUP:
@@ -107,6 +263,16 @@ while running:
     keys = pygame.key.get_pressed()
     player.move(keys)
 
+    if all_enemies_defeated(enemies) and player.rect.colliderect(next_room_tp):
+        if wave < 2:
+            wave += 1
+            enemies = load_next_wave(enemies, wave)
+        else:
+            enemies.append(Boss(speed=0.3, screen_width=width, screen_height=height))
+
+    checkHammerCollide(player, enemies)
+    check_player_enemy_collisions(player, enemies)
+    player.update_invincibility()
 
     screen.blit(background_image, (0, 0))
     screen.blit(center_image, center_rect)
@@ -118,13 +284,10 @@ while running:
         enemy.update()
         enemy.draw(screen)
 
-    lizard.move_towards_player(player.rect.x, player.rect.y)
-    orc.move_towards_player(player.rect.x, player.rect.y)
-
-    lizard.update()
-    orc.update()
-    lizard.draw(screen)
-    orc.draw(screen)
+    if player.health <= 0:
+        game_over_screen()
+        pygame.time.wait(3000)
+        running = False
     player.updateArrows(screen)
 
     checkCollide(player.arrows, enemies)
