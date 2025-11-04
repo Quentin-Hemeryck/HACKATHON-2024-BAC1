@@ -9,8 +9,8 @@ Prérequis:
             - "pip -install pygame"
 
 Installation:
-    1. Télécharger le dossier complet
-    2. Glisser le projet à l'endroit où vous désirez
+    - Télécharger le dossier complet
+    - Glisser le projet à l'endroit où vous désirez
 
 Démarrage du jeu:
     - Ouvrir un terminal ou une invite de commande.
